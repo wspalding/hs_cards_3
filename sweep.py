@@ -1,4 +1,5 @@
 import wandb
+from data.pad_images import PADDED_IMAGE_LEN
 from train import train
 
 sweep_config = {
@@ -10,10 +11,11 @@ sweep_config = {
     },
     'parameters': {
             'image_shape': {
-                'value': (28, 28, 1)
+                'value': (200, 200, 3)
             },
             'num_examples': {
-                'value': 60000
+                'value': PADDED_IMAGE_LEN
+
             },
             'num_samples': {
                 'value': 20
@@ -22,26 +24,27 @@ sweep_config = {
             #     'values': [1, 2]
             # },
             'training_loop': {
-                'value': 'simultaneous'
+                'value': 'simultaneous',
                 # 'values': ['simultaneous', 'batch_split', 'full_split']
+                'values': ['simultaneous', 'batch_split']
             },
             'generator_seed_dim': {
                 # 'value': 50
                 'distribution': 'int_uniform',
-                'min': 25,
-                'max': 50
+                'min': 250,
+                'max': 500
             },
             'adversarial_epochs': {
                 # 'value': 50
                 'distribution': 'int_uniform',
-                'min': 50,
-                'max': 100
+                'min': 100,
+                'max': 200
             },
             'discriminator_examples': {
-                'value': 60000
+                'value': PADDED_IMAGE_LEN
             },
             'generator_examples': {
-                'value': 60000
+                'value': PADDED_IMAGE_LEN
             },
             'generator_epochs': {
                 'value': 1
@@ -77,8 +80,8 @@ sweep_config = {
             },
             'discriminator_dropout_rate': {
                 # value: 0.3
-                'min': 0.2,
-                'max': 0.4
+                'min': 0.15,
+                'max': 0.25
             }
     },
     'early_terminate': {
@@ -94,6 +97,6 @@ sweep_config = {
 
 if(__name__ == '__main__'):
     sweep_id = wandb.sweep(sweep_config, 
-                            project="WandB_Interview_Demo")
+                            project="hs_cards_3")
 
     wandb.agent(sweep_id, train)

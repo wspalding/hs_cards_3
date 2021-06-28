@@ -37,8 +37,8 @@ def train(config=None):
 
     generator = create_generator(config)
     discriminator = create_discriminator(config)
-    generator_optimizer = tf.keras.optimizers.Adam(config.generator_learning_rate)
-    discriminator_optimizer = tf.keras.optimizers.Adam(config.discriminator_learning_rate)
+    generator_optimizer = tf.keras.optimizers.Adam(config.generator_learning_rate, beta_1=config.generator_learning_rate_decay)
+    discriminator_optimizer = tf.keras.optimizers.Adam(config.discriminator_learning_rate, beta_1=config.discriminator_learning_rate_decay)
 
     wandb_logger = WandbLogger()
     gen_acc = BinaryAccuracy()
@@ -104,15 +104,14 @@ def train(config=None):
 
     @tf.function
     def train_disc_step(images):
-        types = np.random.randint(0,10, (config.batch_size,))
         noise = tf.random.normal([config.batch_size, config.generator_seed_dim])
         metrics = {}
         
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            generated_images = generator([noise, types], training=True)
+            generated_images = generator(noise, training=True)
 
             real_output = discriminator(images, training=True)
-            fake_output = discriminator([generated_images, types], training=True)
+            fake_output = discriminator(generated_images, training=True)
 
             # gen_loss = generator_loss(fake_output)
             disc_loss = discriminator_loss(real_output, fake_output)
@@ -145,15 +144,14 @@ def train(config=None):
 
     @tf.function
     def train_gen_step(images):
-        types = np.random.randint(0,10, (config.batch_size,))
         noise = tf.random.normal([config.batch_size, config.generator_seed_dim])
         metrics = {}
         
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            generated_images = generator([noise, types], training=True)
+            generated_images = generator(noise, training=True)
 
             # real_output = discriminator(images, training=True)
-            fake_output = discriminator([generated_images, types], training=True)
+            fake_output = discriminator(generated_images, training=True)
 
             gen_loss = generator_loss(fake_output)
             # disc_loss = discriminator_loss(real_output, fake_output)
@@ -195,25 +193,25 @@ def train(config=None):
         disc_loss = 0
         logs = {}
 
-        # if config.training_loop == 'simultaneous':
-        for i, image_batch in enumerate(dataset):
-            print('{}'.format(i+1), end='\r')
-            metrics = train_step(image_batch)
-            gen_loss += metrics['gen_batch_loss']
-            disc_loss += metrics['disc_batch_loss']
-            wandb.log({'disc_grad': wandb.Histogram(np.array(metrics['disc_gradient'][0], dtype=float)),
+        if config.training_loop == 'simultaneous':
+            for i, image_batch in enumerate(dataset):
+                print('{}'.format(i+1), end='\r')
+                metrics = train_step(image_batch)
+                gen_loss += metrics['gen_batch_loss']
+                disc_loss += metrics['disc_batch_loss']
+                wandb.log({'disc_grad': wandb.Histogram(np.array(metrics['disc_gradient'][0], dtype=float)),
                         'gen_grad': wandb.Histogram(np.array(metrics['gen_gradient'][0], dtype=float))})
 
-        # elif config.training_loop == 'batch_split':
-        #     for i, image_batch in enumerate(dataset):
-        #         print('{}/{}'.format(i+1, len(dataset)), end='\r')
-        #         disc_metrics = train_disc_step(image_batch)
-        #         wandb.log({'disc_grad': wandb.Histogram(np.array(disc_metrics['disc_gradient'][0].values, dtype=float))})
-        #         disc_loss += disc_metrics['disc_batch_loss']
+        elif config.training_loop == 'batch_split':
+            for i, image_batch in enumerate(dataset):
+                print('{}'.format(i+1), end='\r')
+                disc_metrics = train_disc_step(image_batch)
+                wandb.log({'disc_grad': wandb.Histogram(np.array(disc_metrics['disc_gradient'][0], dtype=float))})
+                disc_loss += disc_metrics['disc_batch_loss']
 
-        #         gen_metrics = train_gen_step(image_batch)
-        #         wandb.log({'gen_grad': wandb.Histogram(np.array(gen_metrics['gen_gradient'][0].values, dtype=float))})
-        #         gen_loss += gen_metrics['gen_batch_loss']
+                gen_metrics = train_gen_step(image_batch)
+                wandb.log({'gen_grad': wandb.Histogram(np.array(gen_metrics['gen_gradient'][0], dtype=float))})
+                gen_loss += gen_metrics['gen_batch_loss']
                 
                 
         # elif config.training_loop == 'full_split':

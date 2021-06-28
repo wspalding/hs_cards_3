@@ -1,9 +1,13 @@
 import os
 import cv2
 import numpy as np
-import constants
+from data import  constants
 
 from PIL import Image
+
+IMAGE_DIR_LEN = len(os.listdir(constants.IMAGES_DIR))
+
+PADDED_IMAGE_LEN = len(os.listdir(constants.PADDED_IMAGE_DIR))
 
 def get_max_image_sizes(files):
     max_width = 0

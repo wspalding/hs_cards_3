@@ -17,25 +17,25 @@ def create_discriminator(config):
     img_input = Input(shape=config.image_shape, name='image input')
 
     img_layer = Conv2D(8, (16,16), strides=(1,1), padding='same', input_shape=config.image_shape)(img_input)
-    img_layer = Dropout(0.2)(img_layer)
+    img_layer = Dropout(config.discriminator_dropout_rate)(img_layer)
     img_layer = BatchNormalization()(img_layer)
     img_layer = LeakyReLU(0.2)(img_layer)
 
     # img_layer = (MaxPool2D(pool_size=(2,2))) #shape -> 200,200,8 -> 100,100,8
     img_layer = Conv2D(32, (8,8), strides=(2,2), padding='same')(img_layer) #shape -> 100,100,8 -> 100,100,32
-    img_layer = Dropout(0.2)(img_layer)
+    img_layer = Dropout(config.discriminator_dropout_rate)(img_layer)
     img_layer = BatchNormalization()(img_layer)
     img_layer = LeakyReLU(0.2)(img_layer)
 
     # img_layer = (MaxPool2D(pool_size=(2,2))) #shape -> 100,100,32 -> 50,50,32
     img_layer = Conv2D(32, (4,4), strides=(2,2), padding='same')(img_layer)
-    img_layer = Dropout(0.2)(img_layer)
+    img_layer = Dropout(config.discriminator_dropout_rate)(img_layer)
     img_layer = BatchNormalization()(img_layer)
     img_layer = LeakyReLU(0.2)(img_layer)
 
     # img_layer = (MaxPool2D(pool_size=(2,2))) #shape -> 50,50,32 -> 25,25,32
     img_layer = Conv2D(32, (4,4), strides=(2,2), padding='same')(img_layer)
-    img_layer = Dropout(0.2)(img_layer)
+    img_layer = Dropout(config.discriminator_dropout_rate)(img_layer)
     img_layer = BatchNormalization()(img_layer)
     img_layer = LeakyReLU(0.2)(img_layer)
 
